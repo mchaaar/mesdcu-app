@@ -77,7 +77,3 @@ Tu veux améliorer l'app ? Toute contribution est bienvenue :
 3. Commit tes changements (`git commit -m 'Ajout d'une super fonctionnalité'`)
 4. Push ta branche (`git push origin fonctionnalite-geniale`)
 5. Ouvre une pull request 👌
-
----
-
-Créé avec ❤️ par l'équipe CynaAppMobile.
