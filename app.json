@@ -5,6 +5,9 @@
       "expo-router"
     ],
     "name": "CynaAppMobile",
-    "slug": "CynaAppMobile"
+    "slug": "CynaAppMobile",
+    "android": {
+      "package": "com.anonymous.CynaAppMobile"
+    }
   }
 }
