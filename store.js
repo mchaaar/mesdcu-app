@@ -11,16 +11,15 @@ export const useAuthStore = create(persist(
     register: async (first_name, last_name, email, phone, password) => {
       try {
         const response = await registerUser(first_name, last_name, email, phone, password);
-        set({ token: response.token });
-
-        const userProfile = await fetchUserProfile(response.token);
-        set({ user: userProfile });
+    
+        console.log(" Register Success:", response);
+    
+        return response;
       } catch (error) {
-        console.error("Error during registration :", error);
+        console.error(" Error during registration:", error.response?.data || error.message);
         throw error;
       }
     },
-
     login: async (email, password) => {
       try {
         const response = await loginUser(email, password);

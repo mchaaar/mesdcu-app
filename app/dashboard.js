@@ -1,9 +1,22 @@
 import React, { useEffect, useState } from 'react';
-import { SafeAreaView, Text, StyleSheet, ActivityIndicator, FlatList, Image, Alert, Modal, TouchableOpacity, View, ScrollView } from 'react-native';
+import { SafeAreaView, Text, StyleSheet, ActivityIndicator, FlatList, Alert, Modal, TouchableOpacity, View, ScrollView } from 'react-native';
 import { Card, Button } from 'react-native-paper';
 import { useAuthStore } from '../store';
 import BurgerMenu from './BurgerMenu';
 import { fetchProducts, addSubscription, removeSubscription } from '../api';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+
+const getProductIcon = (productName) => {
+  switch (productName.toLowerCase()) {
+    case 'socialdrive': return 'cloud-sync';
+    case 'cloudsafe': return 'cloud-lock';
+    case 'marketanalytics': return 'chart-line';
+    case 'projecthub': return 'clipboard-text';
+    case 'devopspro': return 'server-network';
+    case 'salesboost': return 'cart';
+    default: return 'cogs';
+  }
+};
 
 export default function DashboardScreen() {
   const { token, user } = useAuthStore();
@@ -16,7 +29,6 @@ export default function DashboardScreen() {
     setLoading(true);
     try {
       const productList = await fetchProducts(token);
-      productList.sort((a, b) => b.subscribed - a.subscribed);
       setProducts(productList);
     } catch (error) {
       Alert.alert("Error", "Failed to fetch products.");
@@ -52,12 +64,18 @@ export default function DashboardScreen() {
     setModalVisible(true);
   };
 
+  const subscribedProducts = products.filter((item) => item.subscribed === 1);
+  const availableProducts = products.filter((item) => item.subscribed === 0);
+
   const renderItem = ({ item }) => (
     <TouchableOpacity style={styles.cardWrapper} onPress={() => openModal(item)}>
-      <Card style={[styles.card, item.subscribed ? styles.subscribedCard : null]}>
-        <Text style={styles.cardTitle}>{item.name}</Text>
-        <Image source={{ uri: item.image_url }} style={styles.cardImage} resizeMode="cover" />
-        <Text style={styles.cardDuration}>{extractDuration(item.description)}</Text>
+      <Card style={[styles.card, item.subscribed ? styles.subscribedCard : styles.unsubscribedCard]}>
+        <View style={styles.cardContent}>
+          <Text style={styles.cardTitle}>{item.name}</Text>
+          <Icon name={getProductIcon(item.name)} size={50} color="#635bff" style={styles.icon} />
+          <Text style={styles.cardDuration}>{extractDuration(item.description)}</Text>
+        </View>
+
         <Button
           mode="contained"
           style={[styles.button, item.subscribed ? styles.unsubscribeButton : styles.subscribeButton]}
@@ -72,21 +90,42 @@ export default function DashboardScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <BurgerMenu />
-      <Text style={styles.title}>Products</Text>
+      <Text style={styles.title}>Your Services</Text>
+
       {loading ? (
         <ActivityIndicator size="large" color="#635bff" />
       ) : (
-        <FlatList
-          data={products}
-          keyExtractor={(item) => item.id.toString()}
-          renderItem={renderItem}
-          numColumns={2}
-          columnWrapperStyle={styles.columnWrapper}
-          contentContainerStyle={styles.listContainer}
-        />
+        <ScrollView>
+          {subscribedProducts.length > 0 && (
+            <>
+              <Text style={styles.sectionTitle}>Your Subscriptions</Text>
+              <FlatList
+                data={subscribedProducts}
+                keyExtractor={(item) => item.id.toString()}
+                renderItem={renderItem}
+                numColumns={2}
+                columnWrapperStyle={styles.columnWrapper}
+                contentContainerStyle={styles.listContainer}
+              />
+            </>
+          )}
+
+          {availableProducts.length > 0 && (
+            <>
+              <Text style={styles.sectionTitle}>Available Services</Text>
+              <FlatList
+                data={availableProducts}
+                keyExtractor={(item) => item.id.toString()}
+                renderItem={renderItem}
+                numColumns={2}
+                columnWrapperStyle={styles.columnWrapper}
+                contentContainerStyle={styles.listContainer}
+              />
+            </>
+          )}
+        </ScrollView>
       )}
 
-      {/* Modal Description Complète */}
       <Modal transparent animationType="fade" visible={modalVisible} onRequestClose={() => setModalVisible(false)}>
         <View style={styles.modalBackground}>
           <View style={styles.modalContainer}>
@@ -107,25 +146,31 @@ export default function DashboardScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f6f9fc', padding: 10 },
   title: { fontSize: 26, fontWeight: 'bold', color: '#32325d', textAlign: 'center', marginVertical: 20 },
+  sectionTitle: { fontSize: 20, fontWeight: 'bold', color: '#635bff', marginVertical: 10, paddingLeft: 10 },
   listContainer: { paddingBottom: 20 },
   columnWrapper: { justifyContent: 'space-between', marginBottom: 15 },
   cardWrapper: { flex: 1, marginHorizontal: 5 },
+
   card: {
-    backgroundColor: '#ffffff',
     borderRadius: 12,
     padding: 10,
-    elevation: 3,
+    elevation: 4,
     alignItems: 'center',
+    width: '100%',
+    minHeight: 200,
   },
-  subscribedCard: {
-    backgroundColor: '#e0e0e0',
-  },
+  cardContent: { alignItems: 'center', marginBottom: 10 },
+  subscribedCard: { backgroundColor: '#e3e7ff' },
+  unsubscribedCard: { backgroundColor: '#ffffff' },
+
   cardTitle: { fontSize: 16, fontWeight: 'bold', color: '#32325d', textAlign: 'center', marginBottom: 5 },
-  cardImage: { width: '100%', height: 80, borderRadius: 6, backgroundColor: '#e1e4e8', marginBottom: 5 },
+  icon: { marginVertical: 10 },
   cardDuration: { fontSize: 12, color: '#525f7f', textAlign: 'center', marginBottom: 5 },
-  button: { width: '100%' },
-  subscribeButton: { backgroundColor: '#635bff' },
-  unsubscribeButton: { backgroundColor: '#dc3545' },
+
+  button: { width: '100%', borderRadius: 6 },
+  subscribeButton: { backgroundColor: '#4CAF50' },
+  unsubscribeButton: { backgroundColor: '#DC3545' },
+
   modalBackground: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center' },
   modalContainer: { backgroundColor: '#fff', borderRadius: 12, padding: 20, width: '85%', maxHeight: '70%' },
   modalTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 10, textAlign: 'center', color: '#32325d' },
